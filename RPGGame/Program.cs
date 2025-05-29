@@ -85,7 +85,7 @@ namespace RPGGame
             Console.ForegroundColor = ConsoleColor.White;
 
             Console.Write($"\n    Enter Player {playerNum} Name: ");
-            string name = Console.ReadLine().Trim();
+            string name = Console.ReadLine()?.Trim() ?? $"Player{playerNum}";
 
             Console.WriteLine("\n    Choose your character:");
             Console.WriteLine("    1. Debugger Dana (Consistent moderate damage)");
@@ -103,14 +103,33 @@ namespace RPGGame
 
     class BattleSystem
     {
-        private CharacterBase player1;
-        private CharacterBase player2;
+        private readonly CharacterBase player1;
+        private readonly CharacterBase player2;
         private bool player1Turn = true;
+        private Random random = new Random();
+
+        private readonly string[] danaDialogues = new string[]
+        {
+            "Debugging this code like a pro!",
+            "Let's squash some bugs!",
+            "Syntax errors won't save you!",
+            "Time to refactor your health away!",
+            "Watch out for my breakpoint!"
+        };
+
+        private readonly string[] quincyDialogues = new string[]
+        {
+            "Quiz time! Can you answer this attack?",
+            "Think fast, here comes a question!",
+            "Better study harder!",
+            "This attack is multiple choice!",
+            "Prepare for a pop quiz!"
+        };
 
         public BattleSystem(CharacterBase p1, CharacterBase p2)
         {
-            player1 = p1;
-            player2 = p2;
+            player1 = p1 ?? throw new ArgumentNullException(nameof(p1));
+            player2 = p2 ?? throw new ArgumentNullException(nameof(p2));
         }
 
         public void StartBattle()
@@ -124,7 +143,10 @@ namespace RPGGame
 
             DrawBattleScreen();
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"\n    {(player1.IsAlive() ? player1.Name : player2.Name)} wins the battle!");
+            string firstDead = player1.IsAlive() ? player2.Name : player1.Name;
+            string winner = player1.IsAlive() ? player1.Name : player2.Name;
+            Console.WriteLine($"\n    {firstDead} died first!");
+            Console.WriteLine($"    {winner} wins the battle!");
             Console.ForegroundColor = ConsoleColor.White;
         }
 
@@ -145,16 +167,20 @@ namespace RPGGame
             Console.Write($"\n    {player2.Name}");
             DrawHealthBar(player2);
 
-            // Battle scene
+            // Battle scene with moving attack animation
             Console.WriteLine("\n");
-            Console.WriteLine(@"
-         P1    ⚔️     P2
-        [^^]  ==||==  [^^]
-         ||           ||
-        /||\         /||\
-         /\           /\
-    ");
-
+            if (player1Turn)
+            {
+                Console.WriteLine("    P1  --> ⚔️     P2");
+            }
+            else
+            {
+                Console.WriteLine("    P1     ⚔️  <--  P2");
+            }
+            Console.WriteLine("   [^^]  ==||==  [^^]");
+            Console.WriteLine("    ||           ||");
+            Console.WriteLine("   /||\\         /||\\");
+            Console.WriteLine("    /\\           /\\");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"\n    {(player1Turn ? player1.Name : player2.Name)}'s turn!");
             Console.ForegroundColor = ConsoleColor.White;
@@ -179,26 +205,48 @@ namespace RPGGame
             Console.ReadKey(true);
 
             int damage;
+            string dialogue = "";
+
             if (player1Turn)
             {
                 damage = player1.Attack();
                 player2.TakeDamage(damage);
-                DisplayAttack(player1.Name, player2.Name, damage);
+                dialogue = GetRandomDialogue(player1.Name);
+                DisplayAttack(player1.Name, player2.Name, damage, dialogue);
             }
             else
             {
                 damage = player2.Attack();
                 player1.TakeDamage(damage);
-                DisplayAttack(player2.Name, player1.Name, damage);
+                dialogue = GetRandomDialogue(player2.Name);
+                DisplayAttack(player2.Name, player1.Name, damage, dialogue);
             }
 
             player1Turn = !player1Turn;
         }
 
-        private void DisplayAttack(string attacker, string defender, int damage)
+        private string GetRandomDialogue(string playerName)
+        {
+            if (playerName.Contains("Dana"))
+            {
+                return danaDialogues[random.Next(danaDialogues.Length)];
+            }
+            else if (playerName.Contains("Quincy"))
+            {
+                return quincyDialogues[random.Next(quincyDialogues.Length)];
+            }
+            else
+            {
+                return "Take that!";
+            }
+        }
+
+        private void DisplayAttack(string attacker, string defender, int damage, string dialogue)
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"\n    {attacker} attacks {defender} for {damage} damage!");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine($"    \"{dialogue}\"");
             Console.ForegroundColor = ConsoleColor.White;
         }
     }
