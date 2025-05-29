@@ -7,6 +7,7 @@ namespace RPGGame
     {
         private CharacterBase player1;
         private CharacterBase player2;
+        private bool player1Turn;
         private Random random;
 
         public MainForm()
@@ -49,7 +50,9 @@ namespace RPGGame
                 listBoxBattleLog.Items.Clear();
                 listBoxBattleLog.Items.Add("Battle started!");
 
-                StartBattle();
+                player1Turn = true;
+                UpdateHealthLabels();
+                UpdateTurnUI();
             }
             catch (Exception ex)
             {
@@ -70,35 +73,61 @@ namespace RPGGame
             }
         }
 
-        private void StartBattle()
+        private void buttonPlayer1Attack_Click(object sender, EventArgs e)
         {
-            bool player1Turn = true;
+            if (!player1Turn || !player1.IsAlive() || !player2.IsAlive())
+                return;
 
-            while (player1.IsAlive() && player2.IsAlive())
+            int damage = player1.Attack();
+            player2.TakeDamage(damage);
+            listBoxBattleLog.Items.Add($"{player1.Name} attacks {player2.Name} for {damage} damage.");
+            UpdateHealthLabels();
+
+            if (!player2.IsAlive())
             {
-                if (player1Turn)
-                {
-                    int damage = player1.Attack();
-                    player2.TakeDamage(damage);
-                    listBoxBattleLog.Items.Add($"{player1.Name} attacks {player2.Name} for {damage} damage.");
-                }
-                else
-                {
-                    int damage = player2.Attack();
-                    player1.TakeDamage(damage);
-                    listBoxBattleLog.Items.Add($"{player2.Name} attacks {player1.Name} for {damage} damage.");
-                }
-
-                UpdateHealthLabels();
-
-                player1Turn = !player1Turn;
-                Application.DoEvents(); // Allow UI to update
-                System.Threading.Thread.Sleep(500); // Pause for readability
+                listBoxBattleLog.Items.Add($"Battle over! Winner: {player1.Name}");
+                labelWinner.Text = $"Winner: {player1.Name}";
+                DisableAttackButtons();
+                return;
             }
 
-            string winner = player1.IsAlive() ? player1.Name : player2.Name;
-            listBoxBattleLog.Items.Add($"Battle over! Winner: {winner}");
-            labelWinner.Text = $"Winner: {winner}";
+            player1Turn = false;
+            UpdateTurnUI();
+        }
+
+        private void buttonPlayer2Attack_Click(object sender, EventArgs e)
+        {
+            if (player1Turn || !player1.IsAlive() || !player2.IsAlive())
+                return;
+
+            int damage = player2.Attack();
+            player1.TakeDamage(damage);
+            listBoxBattleLog.Items.Add($"{player2.Name} attacks {player1.Name} for {damage} damage.");
+            UpdateHealthLabels();
+
+            if (!player1.IsAlive())
+            {
+                listBoxBattleLog.Items.Add($"Battle over! Winner: {player2.Name}");
+                labelWinner.Text = $"Winner: {player2.Name}";
+                DisableAttackButtons();
+                return;
+            }
+
+            player1Turn = true;
+            UpdateTurnUI();
+        }
+
+        private void UpdateTurnUI()
+        {
+            buttonPlayer1Attack.Enabled = player1Turn && player1.IsAlive() && player2.IsAlive();
+            buttonPlayer2Attack.Enabled = !player1Turn && player1.IsAlive() && player2.IsAlive();
+            labelTurn.Text = player1Turn ? $"{player1.Name}'s Turn" : $"{player2.Name}'s Turn";
+        }
+
+        private void DisableAttackButtons()
+        {
+            buttonPlayer1Attack.Enabled = false;
+            buttonPlayer2Attack.Enabled = false;
         }
 
         private void UpdateHealthLabels()
