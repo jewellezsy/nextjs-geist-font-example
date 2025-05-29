@@ -41,6 +41,9 @@ namespace RPGGame
             this.labelPlayer2Name = new System.Windows.Forms.Label();
             this.labelPlayer1Character = new System.Windows.Forms.Label();
             this.labelPlayer2Character = new System.Windows.Forms.Label();
+            this.buttonPlayer1Attack = new System.Windows.Forms.Button();
+            this.buttonPlayer2Attack = new System.Windows.Forms.Button();
+            this.labelTurn = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // labelPlayer1Name
@@ -121,46 +124,42 @@ namespace RPGGame
             this.buttonStartBattle.UseVisualStyleBackColor = true;
             this.buttonStartBattle.Click += new System.EventHandler(this.buttonStartBattle_Click);
             // 
-            // listBoxBattleLog
+            // buttonPlayer1Attack
             // 
-            this.listBoxBattleLog.FormattingEnabled = true;
-            this.listBoxBattleLog.HorizontalScrollbar = true;
-            this.listBoxBattleLog.Location = new System.Drawing.Point(15, 130);
-            this.listBoxBattleLog.Name = "listBoxBattleLog";
-            this.listBoxBattleLog.Size = new System.Drawing.Size(523, 199);
-            this.listBoxBattleLog.TabIndex = 9;
+            this.buttonPlayer1Attack.Location = new System.Drawing.Point(15, 90);
+            this.buttonPlayer1Attack.Name = "buttonPlayer1Attack";
+            this.buttonPlayer1Attack.Size = new System.Drawing.Size(150, 30);
+            this.buttonPlayer1Attack.TabIndex = 13;
+            this.buttonPlayer1Attack.Text = "Player 1 Attack";
+            this.buttonPlayer1Attack.UseVisualStyleBackColor = true;
+            this.buttonPlayer1Attack.Click += new System.EventHandler(this.buttonPlayer1Attack_Click);
             // 
-            // labelPlayer1Health
+            // buttonPlayer2Attack
             // 
-            this.labelPlayer1Health.AutoSize = true;
-            this.labelPlayer1Health.Location = new System.Drawing.Point(12, 340);
-            this.labelPlayer1Health.Name = "labelPlayer1Health";
-            this.labelPlayer1Health.Size = new System.Drawing.Size(35, 13);
-            this.labelPlayer1Health.TabIndex = 10;
-            this.labelPlayer1Health.Text = "Health";
+            this.buttonPlayer2Attack.Location = new System.Drawing.Point(388, 90);
+            this.buttonPlayer2Attack.Name = "buttonPlayer2Attack";
+            this.buttonPlayer2Attack.Size = new System.Drawing.Size(150, 30);
+            this.buttonPlayer2Attack.TabIndex = 14;
+            this.buttonPlayer2Attack.Text = "Player 2 Attack";
+            this.buttonPlayer2Attack.UseVisualStyleBackColor = true;
+            this.buttonPlayer2Attack.Click += new System.EventHandler(this.buttonPlayer2Attack_Click);
             // 
-            // labelPlayer2Health
+            // labelTurn
             // 
-            this.labelPlayer2Health.AutoSize = true;
-            this.labelPlayer2Health.Location = new System.Drawing.Point(400, 340);
-            this.labelPlayer2Health.Name = "labelPlayer2Health";
-            this.labelPlayer2Health.Size = new System.Drawing.Size(35, 13);
-            this.labelPlayer2Health.TabIndex = 11;
-            this.labelPlayer2Health.Text = "Health";
-            // 
-            // labelWinner
-            // 
-            this.labelWinner.AutoSize = true;
-            this.labelWinner.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelWinner.Location = new System.Drawing.Point(220, 370);
-            this.labelWinner.Name = "labelWinner";
-            this.labelWinner.Size = new System.Drawing.Size(60, 17);
-            this.labelWinner.TabIndex = 12;
-            this.labelWinner.Text = "Winner";
+            this.labelTurn.AutoSize = true;
+            this.labelTurn.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelTurn.Location = new System.Drawing.Point(220, 90);
+            this.labelTurn.Name = "labelTurn";
+            this.labelTurn.Size = new System.Drawing.Size(40, 17);
+            this.labelTurn.TabIndex = 15;
+            this.labelTurn.Text = "Turn";
             // 
             // MainForm
             // 
             this.ClientSize = new System.Drawing.Size(554, 410);
+            this.Controls.Add(this.labelTurn);
+            this.Controls.Add(this.buttonPlayer2Attack);
+            this.Controls.Add(this.buttonPlayer1Attack);
             this.Controls.Add(this.labelWinner);
             this.Controls.Add(this.labelPlayer2Health);
             this.Controls.Add(this.labelPlayer1Health);
