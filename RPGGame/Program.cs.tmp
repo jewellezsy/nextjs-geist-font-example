@@ -1,0 +1,129 @@
+using System;
+using System.Threading;
+
+namespace RPGGame
+{
+    class Program
+    {
+        // ... [Previous code remains unchanged] ...
+    }
+
+    class BattleSystem
+    {
+        private readonly CharacterBase player1;
+        private readonly CharacterBase player2;
+        private bool player1Turn = true;
+        private Random random = new Random();
+
+        private readonly string[] danaDialogues = new string[]
+        {
+            "Debugging this code like a pro!",
+            "Let's squash some bugs!",
+            "Syntax errors won't save you!",
+            "Time to refactor your health away!",
+            "Watch out for my breakpoint!"
+        };
+
+        private readonly string[] quincyDialogues = new string[]
+        {
+            "Quiz time! Can you answer this attack?",
+            "Think fast, here comes a question!",
+            "Better study harder!",
+            "This attack is multiple choice!",
+            "Prepare for a pop quiz!"
+        };
+
+        // Character sprites
+        private readonly string[] normalCharacter = new string[]
+        {
+            "  o  ",
+            " /|\\ ",
+            " / \\ "
+        };
+
+        private readonly string[] victoryCharacter = new string[]
+        {
+            "\\o/  ",
+            " |  ",
+            "/ \\ "
+        };
+
+        private readonly string[] defeatedCharacter = new string[]
+        {
+            "     ",
+            "     ",
+            " o/|\\"
+        };
+
+        private readonly string rightSword = "===>";
+        private readonly string leftSword = "<===";
+
+        public BattleSystem(CharacterBase p1, CharacterBase p2)
+        {
+            player1 = p1 ?? throw new ArgumentNullException(nameof(p1));
+            player2 = p2 ?? throw new ArgumentNullException(nameof(p2));
+        }
+
+        private void DrawBattleScreen()
+        {
+            Console.Clear();
+            // Draw classroom background
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\n    ╔══════════════════════════════════════════════════════╗");
+            Console.WriteLine("    ║                 CLASSROOM BATTLE                     ║");
+            Console.WriteLine("    ╚══════════════════════════════════════════════════════╝");
+
+            // Player 1 stats
+            Console.Write("\n    ");
+            if (player1Turn)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(player1.Name);
+            DrawHealthBar(player1);
+
+            // Player 2 stats
+            Console.Write("\n    ");
+            if (!player1Turn)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(player2.Name);
+            DrawHealthBar(player2);
+
+            // Draw blackboard
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine("\n    ┌──────────────────────────────────────────────────────┐");
+            Console.WriteLine("    │                                                      │");
+            Console.WriteLine("    │     MATH CLASS                                       │");
+            Console.WriteLine("    │     2 + 2 = 4            sana mabigyan ng uno        │");
+            Console.WriteLine("    │     x + y = z                                        │");
+            Console.WriteLine("    └──────────────────────────────────────────────────────┘");
+
+            // Draw classroom elements
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("    ┌─┐  ┌─┐  ┌─┐    Teacher's     ┌─┐  ┌─┐  ┌─┐");
+            Console.WriteLine("    └─┘  └─┘  └─┘      Desk        └─┘  └─┘  └─┘");
+            Console.WriteLine("     Δ    Δ    Δ        ▄▄          Δ    Δ    Δ");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            // Draw more classroom elements
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("    Windows: ▒▒▒▒▒▒  ▒▒▒▒▒▒  ▒▒▒▒▒▒");
+            
+            // Battle scene with stickmen
+            Console.WriteLine();
+            DrawStickmen();
+
+            // Draw floor tiles
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓");
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"    {(player1Turn ? player1.Name : player2.Name)}'s turn!");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        // ... [Rest of the code remains unchanged] ...
+    }
+}
