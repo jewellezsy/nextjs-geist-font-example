@@ -5,15 +5,46 @@ namespace RPGGame
 {
     class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
             Console.Title = "Classroom RPG Battle";
             Console.CursorVisible = false;
 
+            // Launch BattleSetupForm for player setup
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            BattleSetupForm setupForm = new BattleSetupForm();
+
+            string player1Name = null;
+            string player2Name = null;
+            string player1Character = null;
+            string player2Character = null;
+
+            bool startBattle = false;
+
+            setupForm.StartBattleClicked += (sender, e) =>
+            {
+                player1Name = setupForm.Player1Name;
+                player2Name = setupForm.Player2Name;
+                player1Character = setupForm.Player1Character;
+                player2Character = setupForm.Player2Character;
+                startBattle = true;
+                setupForm.Hide();
+            };
+
+            Application.Run(setupForm);
+
+            if (!startBattle)
+                return;
+
+            CharacterBase player1 = player1Character == "Debugger" ? new Debugger(player1Name) : new QuizMaster(player1Name);
+            CharacterBase player2 = player2Character == "Debugger" ? new Debugger(player2Name) : new QuizMaster(player2Name);
+
             while (true)
             {
                 DrawTitle();
-                if (!StartGame())
+                if (!StartGame(player1, player2, setupForm))
                     break;
             }
         }
@@ -24,10 +55,10 @@ namespace RPGGame
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine(@"
     ╔══════════════════════════════════════════════════════════╗
-    ║                 CLASSROOM RPG BATTLE                      ║
+    ║                 CLASSROOM RPG BATTLE                     ║
     ╚══════════════════════════════════════════════════════════╝
 
-         ┌─┐       ┌─┐
+            ┌─┐       ┌─┐
          ┌──┘ ┴───────┘ ┴──┐
          │                 │
          │       ───       │
@@ -49,12 +80,12 @@ namespace RPGGame
                └──┴──┘       └──┴──┘
     ");
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("\n\n    1. Start New Battle");
+            Console.WriteLine("\n\n    1. Start New Game");
             Console.WriteLine("    2. Exit Game");
             Console.ForegroundColor = ConsoleColor.White;
         }
 
-        static bool StartGame()
+        static bool StartGame(CharacterBase player1, CharacterBase player2, BattleSetupForm setupForm)
         {
             ConsoleKeyInfo key;
             do
@@ -65,13 +96,43 @@ namespace RPGGame
             if (key.KeyChar == '2')
                 return false;
 
-            CharacterBase player1 = CreatePlayer(1);
-            CharacterBase player2 = CreatePlayer(2);
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("\n\n    Character setup complete!");
+            Console.WriteLine($"    Player 1: {player1.Name} ({player1.GetType().Name})");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\n    Press any key to start exploring...");
+            Console.ReadKey(true);
 
-            BattleSystem battle = new BattleSystem(player1, player2);
+            // Initialize map and movement
+            MapSystem mapSystem = new MapSystem();
+            bool battleTriggered = false;
+
+            while (!battleTriggered)
+            {
+                mapSystem.DrawMap();
+                ConsoleKeyInfo moveKey = Console.ReadKey(true);
+
+                if (moveKey.Key == ConsoleKey.Q)
+                    return true;
+
+                battleTriggered = mapSystem.MovePlayer(moveKey.Key);
+            }
+
+            // Show story introduction when enemy is encountered
+            StorySystem.ShowStory();
+
+            // Start battle
+            BattleSystem battle = new BattleSystem(player1, player2, setupForm);
             battle.StartBattle();
 
-            Console.WriteLine("\nPress any key to continue...");
+            // Show appropriate ending dialogue
+            if (player1.IsAlive())
+                StorySystem.ShowVictoryDialogue();
+            else
+                StorySystem.ShowDefeatDialogue();
+
+            Console.WriteLine("\nPress any key to return to main menu...");
             Console.ReadKey(true);
             return true;
         }
@@ -88,8 +149,8 @@ namespace RPGGame
             string name = Console.ReadLine()?.Trim() ?? $"Player{playerNum}";
 
             Console.WriteLine("\n    Choose your character:");
-            Console.WriteLine("    1. Debugger Dana (Consistent moderate damage)");
-            Console.WriteLine("    2. QuizMaster Quincy (Variable damage range)");
+            Console.WriteLine("    1. Debugger (Consistent moderate damage)");
+            Console.WriteLine("    2. QuizMaster (Variable damage range)");
 
             ConsoleKeyInfo key;
             do
@@ -97,7 +158,7 @@ namespace RPGGame
                 key = Console.ReadKey(true);
             } while (key.KeyChar != '1' && key.KeyChar != '2');
 
-            return key.KeyChar == '1' ? new DebuggerDana(name) : new QuizMasterQuincy(name);
+            return key.KeyChar == '1' ? new Debugger(name) : new QuizMaster(name);
         }
     }
 
@@ -105,6 +166,7 @@ namespace RPGGame
     {
         private readonly CharacterBase player1;
         private readonly CharacterBase player2;
+        private readonly BattleSetupForm setupForm;
         private bool player1Turn = true;
         private Random random = new Random();
 
@@ -126,10 +188,36 @@ namespace RPGGame
             "Prepare for a pop quiz!"
         };
 
-        public BattleSystem(CharacterBase p1, CharacterBase p2)
+        // Character sprites
+        private readonly string[] normalCharacter = new string[]
+        {
+            "  o  ",
+            " /|\\ ",
+            " / \\ "
+        };
+
+        private readonly string[] victoryCharacter = new string[]
+        {
+            "\\o/  ",
+            " |  ",
+            "/ \\ "
+        };
+
+        private readonly string[] defeatedCharacter = new string[]
+        {
+            "     ",
+            "     ",
+            " o/|\\"
+        };
+
+        private readonly string rightSword = "===>";
+        private readonly string leftSword = "<===";
+
+        public BattleSystem(CharacterBase p1, CharacterBase p2, BattleSetupForm form)
         {
             player1 = p1 ?? throw new ArgumentNullException(nameof(p1));
             player2 = p2 ?? throw new ArgumentNullException(nameof(p2));
+            setupForm = form ?? throw new ArgumentNullException(nameof(form));
         }
 
         public void StartBattle()
@@ -138,116 +226,91 @@ namespace RPGGame
             {
                 DrawBattleScreen();
                 ProcessTurn();
-                Thread.Sleep(1500);
+                // Wait for player to see the result and press a key
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("\n    Press any key for next turn...");
+                while (Console.KeyAvailable) Console.ReadKey(true);
+                Console.ReadKey(true);
             }
 
             DrawBattleScreen();
+            bool player1Won = player1.IsAlive();
+            PlayVictoryDefeatAnimation(player1Won);
+
+            // Update battle log and winner display on form
+            setupForm.AppendBattleLog($"\n{(player1Won ? player1.Name : player2.Name)} is victorious! {(player1Won ? player2.Name : player1.Name)} has been defeated!");
+            setupForm.DisplayWinner(player1Won ? player1.Name : player2.Name, player1Won ? player2.Name : player1.Name);
+
             Console.ForegroundColor = ConsoleColor.Yellow;
-            string firstDead = player1.IsAlive() ? player2.Name : player1.Name;
-            string winner = player1.IsAlive() ? player1.Name : player2.Name;
-            Console.WriteLine($"\n    {firstDead} died first!");
-            Console.WriteLine($"    {winner} wins the battle!");
+            string winner = player1Won ? player1.Name : player2.Name;
+            string loser = player1Won ? player2.Name : player1.Name;
+            Console.WriteLine($"\n    {loser} has been defeated!");
+            Console.WriteLine($"    {winner} is victorious!");
             Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\n    Press any key to continue...");
+            Console.ReadKey(true);
         }
 
         private void DrawBattleScreen()
         {
             Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("\n    ╔══════════════════════════════════════╗");
-            Console.WriteLine("    ║           CLASSROOM BATTLE           ║");
-            Console.WriteLine("    ╚══════════════════════════════════════╝");
+            // Draw classroom background
             Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("\n    ╔══════════════════════════════════════════════════════╗");
+            Console.WriteLine("    ║                 CLASSROOM BATTLE                     ║");
+            Console.WriteLine("    ╚══════════════════════════════════════════════════════╝");
 
             // Player 1 stats
-            Console.Write($"\n    {player1.Name}");
+            Console.Write("\n    ");
+            if (player1Turn)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(player1.Name);
             DrawHealthBar(player1);
 
             // Player 2 stats
-            Console.Write($"\n    {player2.Name}");
+            Console.Write("\n    ");
+            if (!player1Turn)
+                Console.ForegroundColor = ConsoleColor.Green;
+            else
+                Console.ForegroundColor = ConsoleColor.White;
+            Console.Write(player2.Name);
             DrawHealthBar(player2);
 
-            // Battle scene with moving attack animation
-            Console.WriteLine("\n");
-            if (player1Turn)
-            {
-                Console.WriteLine("    P1  --> ⚔️     P2");
-            }
-            else
-            {
-                Console.WriteLine("    P1     ⚔️  <--  P2");
-            }
-            Console.WriteLine("   [^^]  ==||==  [^^]");
-            Console.WriteLine("    ||           ||");
-            Console.WriteLine("   /||\\         /||\\");
-            Console.WriteLine("    /\\           /\\");
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"\n    {(player1Turn ? player1.Name : player2.Name)}'s turn!");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("\n    Press any key to attack...");
-        }
+            // Draw blackboard
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine("\n    ┌──────────────────────────────────────────────────────┐");
+            Console.WriteLine("    │                                                      │");
+            Console.WriteLine("    │     MATH CLASS                                       │");
+            Console.WriteLine("    │     2 + 2 = 4            sana mabigyan ng uno        │");
+            Console.WriteLine("    │     x + y = z                                        │");
+            Console.WriteLine("    └──────────────────────────────────────────────────────┘");
 
-        private void DrawHealthBar(CharacterBase character)
-        {
-            int healthPercent = (int)((float)character.Health / character.MaxHealth * 20);
-            Console.Write(" HP: [");
-            Console.ForegroundColor = healthPercent > 10 ? ConsoleColor.Green : 
-                                    healthPercent > 5 ? ConsoleColor.Yellow : ConsoleColor.Red;
-            Console.Write(new string('█', healthPercent));
+            // Draw classroom elements
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("    ┌─┐  ┌─┐  ┌─┐    Teacher's     ┌─┐  ┌─┐  ┌─┐");
+            Console.WriteLine("    └─┘  └─┘  └─┘      Desk        └─┘  └─┘  └─┘");
+            Console.WriteLine("     Δ    Δ    Δ        ▄▄          Δ    Δ    Δ");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            // Draw more classroom elements
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write(new string('░', 20 - healthPercent));
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write($"] {character.Health}/{character.MaxHealth}");
-        }
+            Console.WriteLine("    Windows: ▒▒▒▒▒▒  ▒▒▒▒▒▒  ▒▒▒▒▒▒");
+            
+            // Battle scene with stickmen
+            Console.WriteLine();
+            DrawStickmen();
 
-        private void ProcessTurn()
-        {
-            Console.ReadKey(true);
+            // Draw floor tiles
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓");
 
-            int damage;
-            string dialogue = "";
-
-            if (player1Turn)
-            {
-                damage = player1.Attack();
-                player2.TakeDamage(damage);
-                dialogue = GetRandomDialogue(player1.Name);
-                DisplayAttack(player1.Name, player2.Name, damage, dialogue);
-            }
-            else
-            {
-                damage = player2.Attack();
-                player1.TakeDamage(damage);
-                dialogue = GetRandomDialogue(player2.Name);
-                DisplayAttack(player2.Name, player1.Name, damage, dialogue);
-            }
-
-            player1Turn = !player1Turn;
-        }
-
-        private string GetRandomDialogue(string playerName)
-        {
-            if (playerName.Contains("Dana"))
-            {
-                return danaDialogues[random.Next(danaDialogues.Length)];
-            }
-            else if (playerName.Contains("Quincy"))
-            {
-                return quincyDialogues[random.Next(quincyDialogues.Length)];
-            }
-            else
-            {
-                return "Take that!";
-            }
-        }
-
-        private void DisplayAttack(string attacker, string defender, int damage, string dialogue)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"\n    {attacker} attacks {defender} for {damage} damage!");
-            Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.WriteLine($"    \"{dialogue}\"");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"    {(player1Turn ? player1.Name : player2.Name)}'s turn!");
             Console.ForegroundColor = ConsoleColor.White;
         }
+
+        // ... [Rest of the code remains unchanged] ...
     }
 }
